@@ -185,7 +185,7 @@ $(alembic_VERSION_FILE) : $(boost_VERSION_FILE) $(cmake_VERSION_FILE) $(hdf5_VER
 	$(CMAKE) \
 		--build . \
 		--target install \
-		--config $(CMAKE_BUILD_TYPE) && \
+		--config $(CMAKE_BUILD_TYPE) >> $(ABSOLUTE_PREFIX_ROOT)/log_alembic.txt 2>&1 && \
 	cd .. && \
 	rm -rf alembic && \
 	cd $(THIS_DIR) && \
@@ -761,7 +761,7 @@ $(usd_VERSION_FILE) : $(boost_VERSION_FILE) $(cmake_VERSION_FILE) $(glut_VERSION
 	$(CMAKE) \
 		--build . \
 		--target install \
-		--config $(CMAKE_BUILD_TYPE) >> $(ABSOLUTE_PREFIX_ROOT)/log_usd.txt 2>&1 && \
+		--config $(CMAKE_BUILD_TYPE) && \
 	( test ! $(USE_STATIC_BOOST) == OFF || echo Including boost shared libraries... ) && \
 	( test ! $(USE_STATIC_BOOST) == OFF || cp $(ABSOLUTE_PREFIX_ROOT)/boost/lib/*.dll $(ABSOLUTE_PREFIX_ROOT)/usd/lib ) && \
 	cd ../.. && \

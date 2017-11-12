@@ -108,13 +108,11 @@ COMMON_CMAKE_FLAGS :=\
 	-DCMAKE_INSTALL_LIBDIR=lib \
 	-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
 
-all: usd
+all: usd-$(usd_VERSION)-$(BOOST_LINK).tar.xz
+.PHONY : all
+.DEFAULT_GOAL := all
 
-# ifeq "$(BOOST_LINK)" "shared"
-# PYTHON_BIN := C:/Program\ Files/Autodesk/Maya2016/bin/mayapy.exe
-# else
 PYTHON_BIN := C:/Python27/python.exe
-# endif
 PYTHON_VERSION_SHORT := 2.7
 PYTHON_ROOT := $(subst \,,$(dir $(PYTHON_BIN)))
 PYTHON_BIN := $(subst \,,$(PYTHON_BIN))
@@ -717,6 +715,7 @@ $(usd_VERSION_FILE) : $(boost_VERSION_FILE) $(cmake_VERSION_FILE) $(glut_VERSION
 	( printf "/Zc:rvalueCast/d\nd\nd\na\nset(_PXR_CXX_FLAGS \"\044{_PXR_CXX_FLAGS} /Zc:rvalueCast /Zc:strictStrings /Zc:inline\")\n.\nw\nq" | ed -s cmake/defaults/msvcdefaults.cmake ) && \
 	echo Patching for Maya 2016 support... && \
 	( printf "/Program Files.*Maya2017/d\nw\nq" | ed -s cmake/modules/FindMaya.cmake ) && \
+	( printf "/find_package_handle_standard_args/\n/MAYA_EXECUTABLE/d\nw\nq" | ed -s cmake/modules/FindMaya.cmake ) && \
 	echo Cant irnore Unresolved_external_symbol_error_is_expected_Please_ignore because it always fails... && \
 	( printf "/Unresolved_external_symbol_error_is_expected_Please_ignore/d\ni\nint Unresolved_external_symbol_error_is_expected_Please_ignore()\n{return 0;}\n.\nw\nq" | ed -s pxr/base/lib/plug/testenv/TestPlugDsoUnloadable.cpp ) && \
 	( test ! $(USE_STATIC_BOOST) == ON || echo Dont skip plugins when building static libraries... ) && \
@@ -763,11 +762,16 @@ $(usd_VERSION_FILE) : $(boost_VERSION_FILE) $(cmake_VERSION_FILE) $(glut_VERSION
 		--build . \
 		--target install \
 		--config $(CMAKE_BUILD_TYPE) >> $(ABSOLUTE_PREFIX_ROOT)/log_usd.txt 2>&1 && \
+	( test ! $(USE_STATIC_BOOST) == OFF || echo Including boost shared libraries... ) && \
+	( test ! $(USE_STATIC_BOOST) == OFF || cp $(ABSOLUTE_PREFIX_ROOT)/boost/lib/*.dll $(ABSOLUTE_PREFIX_ROOT)/usd/lib ) && \
 	cd ../.. && \
 	rm -rf $(notdir $(basename $(usd_FILE))) && \
 	cd $(THIS_DIR) && \
 	echo $(usd_VERSION) > $@
 
+usd-$(usd_VERSION)-$(BOOST_LINK).tar.xz : $(usd_VERSION_FILE)
+	@echo Archiving $@ && \
+	tar cfJ $@ -C $(ABSOLUTE_PREFIX_ROOT) usd
 
 # libz
 $(zlib_VERSION_FILE) : $(zlib_FILE)/HEAD

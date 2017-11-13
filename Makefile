@@ -758,7 +758,7 @@ $(usd_VERSION_FILE) : $(boost_VERSION_FILE) $(cmake_VERSION_FILE) $(glut_VERSION
 		-DZLIB_ROOT:PATH="$(WINDOWS_PREFIX_ROOT)/zlib" \
 		-D_GLUT_INC_DIR:PATH="$(WINDOWS_PREFIX_ROOT)/glut/include" \
 		-D_GLUT_glut_LIB_DIR:PATH="$(WINDOWS_PREFIX_ROOT)/glut/lib" \
-		.. > $(ABSOLUTE_PREFIX_ROOT)/log_usd.txt 2>&1 && \
+		.. && \
 	$(CMAKE) \
 		--build . \
 		--target install \

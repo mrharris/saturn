@@ -787,7 +787,7 @@ TBB_LIBRARY := "$(WINDOWS_PREFIX_ROOT)/tbb/lib"
 TBB_ROOT_DIR := "$(WINDOWS_PREFIX_ROOT)/tbb/include"
 MAYA_ROOT := "C:/Program Files/Autodesk/Maya2016"
 
-$(usd_VERSION_FILE) : $(boost_VERSION_FILE) $(cmake_VERSION_FILE) $(glut_VERSION_FILE) $(ilmbase_VERSION_FILE) $(jom_VERSION_FILE) $(oiio_VERSION_FILE) $(openexr_VERSION_FILE) $(opensubd_VERSION_FILE) $(ptex_VERSION_FILE) $(tbb_VERSION_FILE) $(usd_FILE)/HEAD
+$(usd_VERSION_FILE) : $(boost_VERSION_FILE) $(cmake_VERSION_FILE) $(glut_VERSION_FILE) $(ilmbase_VERSION_FILE) $(oiio_VERSION_FILE) $(openexr_VERSION_FILE) $(opensubd_VERSION_FILE) $(ptex_VERSION_FILE) $(tbb_VERSION_FILE) $(usd_FILE)/HEAD
 	@echo Building usd $(usd_VERSION) && \
 	mkdir -p $(ABSOLUTE_BUILD_ROOT) && cd $(ABSOLUTE_BUILD_ROOT) && \
 	rm -rf $(notdir $(basename $(usd_FILE))) && \
@@ -820,7 +820,6 @@ $(usd_VERSION_FILE) : $(boost_VERSION_FILE) $(cmake_VERSION_FILE) $(glut_VERSION
 	export PATH=$(ABSOLUTE_PREFIX_ROOT)/jom/bin:$$PATH && \
 	$(CMAKE) \
 		$(COMMON_CMAKE_FLAGS) \
-		-G "NMake Makefiles JOM" \
 		-DALEMBIC_DIR=$(WINDOWS_PREFIX_ROOT)/alembic \
 		-DBOOST_ROOT:PATH="$(WINDOWS_PREFIX_ROOT)/boost" \
 		-DBUILD_SHARED_LIBS:BOOL=OFF \
@@ -853,7 +852,7 @@ $(usd_VERSION_FILE) : $(boost_VERSION_FILE) $(cmake_VERSION_FILE) $(glut_VERSION
 	$(CMAKE) \
 		--build . \
 		--target install \
-		--config $(CMAKE_BUILD_TYPE) -- -j1 && \
+		--config $(CMAKE_BUILD_TYPE) && \
 	( test ! $(USE_STATIC_BOOST) == OFF || echo Including boost shared libraries... ) && \
 	( test ! $(USE_STATIC_BOOST) == OFF || cp $(ABSOLUTE_PREFIX_ROOT)/boost/lib/*.dll $(ABSOLUTE_PREFIX_ROOT)/usd/lib ) && \
 	cd ../.. && \

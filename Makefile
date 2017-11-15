@@ -8,7 +8,7 @@ ABSOLUTE_BUILD_ROOT := $(abspath $(BUILD_ROOT))
 ABSOLUTE_PREFIX_ROOT := $(abspath $(PREFIX_ROOT))
 WINDOWS_SOURCES_ROOT := $(shell cygpath -w $(ABSOLUTE_SOURCES_ROOT))
 WINDOWS_BUILD_ROOT := $(shell cygpath -w $(ABSOLUTE_BUILD_ROOT))
-WINDOWS_PREFIX_ROOT := $(shell cygpath -w $(ABSOLUTE_PREFIX_ROOT)))
+WINDOWS_PREFIX_ROOT := $(subst \,/,$(shell cygpath -w $(ABSOLUTE_PREFIX_ROOT)))
 
 ifeq "$(MAKE_MODE)" ""
 MAKE_MODE := release
@@ -102,12 +102,10 @@ DEFINES += /DBOOST_PYTHON_STATIC_LIB
 endif
 
 COMMON_CMAKE_FLAGS :=\
-	-G "Visual Studio 15 2017 Win64" \
+	-G "NMake Makefiles JOM" \
 	-DCMAKE_BUILD_TYPE:STRING=$(CMAKE_BUILD_TYPE) \
-	-DCMAKE_CXX_COMPILER="$(subst \,/,$(CXX))" \
 	-DCMAKE_CXX_FLAGS_DEBUG="/MTd $(DEFINES)" \
 	-DCMAKE_CXX_FLAGS_RELEASE="/MT $(DEFINES)" \
-	-DCMAKE_C_COMPILER="$(subst \,/,$(CC))" \
 	-DCMAKE_C_FLAGS_DEBUG="/MTd $(DEFINES)" \
 	-DCMAKE_C_FLAGS_RELEASE="/MT $(DEFINES)" \
 	-DCMAKE_INSTALL_LIBDIR=lib \
@@ -158,7 +156,7 @@ $(boost_VERSION_FILE) : $(boost_FILE)
 	cd $(THIS_DIR) && \
 	echo $(BOOST_VERSION) > $@
 
-$(alembic_VERSION_FILE) : $(boost_VERSION_FILE) $(cmake_VERSION_FILE) $(hdf5_VERSION_FILE) $(ilmbase_VERSION_FILE) $(openexr_VERSION_FILE) $(zlib_VERSION_FILE) $(alembic_FILE)/HEAD
+$(alembic_VERSION_FILE) : $(boost_VERSION_FILE) $(cmake_VERSION_FILE) $(jom_VERSION_FILE) $(hdf5_VERSION_FILE) $(ilmbase_VERSION_FILE) $(openexr_VERSION_FILE) $(zlib_VERSION_FILE) $(alembic_FILE)/HEAD
 	@echo Building Alembic $(alembic_VERSION) && \
 	mkdir -p $(ABSOLUTE_BUILD_ROOT) && cd $(ABSOLUTE_BUILD_ROOT) && \
 	rm -rf alembic && \
@@ -168,6 +166,7 @@ $(alembic_VERSION_FILE) : $(boost_VERSION_FILE) $(cmake_VERSION_FILE) $(hdf5_VER
 	( printf '/Werror/d\nw\nq' | ed -s CMakeLists.txt ) && \
 	( printf "/INSTALL/a\nFoundation.h\n.\nw\nq" | ed -s lib/Alembic/AbcCoreLayer/CMakeLists.txt ) && \
 	mkdir -p $(ABSOLUTE_PREFIX_ROOT) && \
+	export PATH=$(ABSOLUTE_PREFIX_ROOT)/jom/bin:$$PATH && \
 	$(CMAKE) \
 		$(COMMON_CMAKE_FLAGS) \
 		-DHDF5_ROOT="$(WINDOWS_PREFIX_ROOT)/hdf5" \
@@ -209,7 +208,7 @@ $(cmake_VERSION_FILE) : $(cmake_FILE)
 	cd $(THIS_DIR) && \
 	echo $(cmake_VERSION) > $@
 
-$(freetype_VERSION_FILE) : $(cmake_VERSION_FILE) $(freetype_FILE)
+$(freetype_VERSION_FILE) : $(cmake_VERSION_FILE) $(jom_VERSION_FILE) $(freetype_FILE)
 	@echo Building FreeType $(freetype_VERSION) && \
 	mkdir -p $(ABSOLUTE_BUILD_ROOT) && cd $(ABSOLUTE_BUILD_ROOT) && \
 	rm -rf $(notdir $(basename $(basename $(freetype_FILE)))) && \
@@ -217,6 +216,7 @@ $(freetype_VERSION_FILE) : $(cmake_VERSION_FILE) $(freetype_FILE)
 	cd $(notdir $(basename $(basename $(freetype_FILE)))) && \
 	mkdir -p build && cd build && \
 	mkdir -p $(ABSOLUTE_PREFIX_ROOT) && \
+	export PATH=$(ABSOLUTE_PREFIX_ROOT)/jom/bin:$$PATH && \
 	$(CMAKE) \
 		$(COMMON_CMAKE_FLAGS) \
 		-DCMAKE_INSTALL_PREFIX="$(WINDOWS_PREFIX_ROOT)/freetype" \
@@ -231,7 +231,7 @@ $(freetype_VERSION_FILE) : $(cmake_VERSION_FILE) $(freetype_FILE)
 	echo $(freetype_VERSION) > $@
 
 #embree 
-$(embree_VERSION_FILE) : $(cmake_VERSION_FILE) $(glut_VERSION_FILE) $(tbb_VERSION_FILE) $(zlib_VERSION_FILE) $(embree_FILE)/HEAD
+$(embree_VERSION_FILE) : $(cmake_VERSION_FILE) $(jom_VERSION_FILE) $(glut_VERSION_FILE) $(tbb_VERSION_FILE) $(zlib_VERSION_FILE) $(embree_FILE)/HEAD
 	@echo Building embree $(embree_VERSION) && \
 	mkdir -p $(ABSOLUTE_BUILD_ROOT) && cd $(ABSOLUTE_BUILD_ROOT) && \
 	rm -rf embree && \
@@ -244,6 +244,7 @@ $(embree_VERSION_FILE) : $(cmake_VERSION_FILE) $(glut_VERSION_FILE) $(tbb_VERSIO
 	( printf '/INSTALL(PROGRAMS/d\nw\nq\n' | ed -s common/cmake/FindTBB.cmake ) && \
 	( printf '/INSTALL(PROGRAMS/d\nw\nq\n' | ed -s common/cmake/FindTBB.cmake ) && \
 	mkdir -p $(ABSOLUTE_PREFIX_ROOT) && \
+	export PATH=$(ABSOLUTE_PREFIX_ROOT)/jom/bin:$$PATH && \
 	$(CMAKE) \
 		$(COMMON_CMAKE_FLAGS) \
 		-DCMAKE_INSTALL_PREFIX="$(WINDOWS_PREFIX_ROOT)/embree" \
@@ -269,7 +270,7 @@ $(embree_VERSION_FILE) : $(cmake_VERSION_FILE) $(glut_VERSION_FILE) $(tbb_VERSIO
 # Edits:
 # - define GLEW_STATIC
 # link glewinfo and visualinfo statically
-$(glew_VERSION_FILE) : $(cmake_VERSION_FILE) $(glew_FILE)
+$(glew_VERSION_FILE) : $(cmake_VERSION_FILE) $(jom_VERSION_FILE) $(glew_FILE)
 	@echo Building glew $(glew_VERSION) && \
 	mkdir -p $(ABSOLUTE_BUILD_ROOT) && cd $(ABSOLUTE_BUILD_ROOT) && \
 	rm -rf $(notdir $(basename $(glew_FILE))) && \
@@ -281,6 +282,7 @@ $(glew_VERSION_FILE) : $(cmake_VERSION_FILE) $(glew_FILE)
 	( printf "/target_link_libraries.*visualinfo/s/glew)/glew_s)/\nw\nq" | ed -s build/cmake/CMakeLists.txt ) && \
 	( printf "/CMAKE_DEBUG_POSTFIX/d\nw\nq" | ed -s build/cmake/CMakeLists.txt ) && \
 	cd build && \
+	export PATH=$(ABSOLUTE_PREFIX_ROOT)/jom/bin:$$PATH && \
 	$(CMAKE) \
 		$(COMMON_CMAKE_FLAGS) \
 		-DCMAKE_INSTALL_PREFIX="$(WINDOWS_PREFIX_ROOT)/glew" \
@@ -296,7 +298,7 @@ $(glew_VERSION_FILE) : $(cmake_VERSION_FILE) $(glew_FILE)
 
 
 # glfw
-$(glfw_VERSION_FILE) : $(cmake_VERSION_FILE) $(glfw_FILE)/HEAD
+$(glfw_VERSION_FILE) : $(cmake_VERSION_FILE) $(jom_VERSION_FILE) $(glfw_FILE)/HEAD
 	@echo Building glfw $(glfw_VERSION) && \
 	mkdir -p $(ABSOLUTE_BUILD_ROOT) && cd $(ABSOLUTE_BUILD_ROOT) && \
 	rm -rf $(notdir $(basename $(glfw_FILE))) && \
@@ -304,6 +306,7 @@ $(glfw_VERSION_FILE) : $(cmake_VERSION_FILE) $(glfw_FILE)/HEAD
 	cd $(notdir $(basename $(glfw_FILE))) && \
 	git checkout -q $(glfw_VERSION) && \
 	mkdir -p $(ABSOLUTE_PREFIX_ROOT) && \
+	export PATH=$(ABSOLUTE_PREFIX_ROOT)/jom/bin:$$PATH && \
 	$(CMAKE) \
 		$(COMMON_CMAKE_FLAGS) \
 		-DGLFW_BUILD_DOCS:BOOL=OFF \
@@ -321,23 +324,24 @@ $(glfw_VERSION_FILE) : $(cmake_VERSION_FILE) $(glfw_FILE)/HEAD
 
 
 # glut
-$(glut_VERSION_FILE) : $(cmake_VERSION_FILE) $(glut_FILE)
+$(glut_VERSION_FILE) : $(cmake_VERSION_FILE) $(jom_VERSION_FILE) $(glut_FILE)
 	@echo Building glut $(glut_VERSION) && \
 	mkdir -p $(ABSOLUTE_BUILD_ROOT) && cd $(ABSOLUTE_BUILD_ROOT) && \
 	rm -rf $(notdir $(basename $(basename $(glut_FILE)))) && \
 	tar -xf $(ABSOLUTE_SOURCES_ROOT)/$(notdir $(glut_FILE)) && \
 	cd $(notdir $(basename $(basename $(glut_FILE)))) && \
+	export PATH=$(ABSOLUTE_PREFIX_ROOT)/jom/bin:$$PATH && \
 	$(CMAKE) \
 		$(COMMON_CMAKE_FLAGS) \
 		-DCMAKE_INSTALL_PREFIX="$(WINDOWS_PREFIX_ROOT)/glut" \
 		-DFREEGLUT_BUILD_DEMOS:BOOL=OFF \
 		-DFREEGLUT_BUILD_SHARED_LIBS:BOOL=OFF \
 		-DINSTALL_PDB:BOOL=ON \
-		. && \
+		. > $(ABSOLUTE_PREFIX_ROOT)/log_glut.txt 2>&1 && \
 	$(CMAKE) \
 		--build . \
 		--target install \
-		--config $(CMAKE_BUILD_TYPE) && \
+		--config $(CMAKE_BUILD_TYPE) >> $(ABSOLUTE_PREFIX_ROOT)/log_glut.txt 2>&1 && \
 	cd .. && \
 	rm -rf $(notdir $(basename $(basename $(glut_FILE)))) && \
 	cd $(THIS_DIR) && \
@@ -345,7 +349,7 @@ $(glut_VERSION_FILE) : $(cmake_VERSION_FILE) $(glut_FILE)
 
 
 # HDF5
-$(hdf5_VERSION_FILE) : $(cmake_VERSION_FILE) $(zlib_VERSION_FILE) $(hdf5_FILE)
+$(hdf5_VERSION_FILE) : $(cmake_VERSION_FILE) $(jom_VERSION_FILE) $(zlib_VERSION_FILE) $(hdf5_FILE)
 	@echo Building HDF5 $(hdf5_VERSION) && \
 	mkdir -p $(ABSOLUTE_BUILD_ROOT) && cd $(ABSOLUTE_BUILD_ROOT) && \
 	rm -rf hdf5-$(hdf5_VERSION) && \
@@ -359,6 +363,7 @@ $(hdf5_VERSION_FILE) : $(cmake_VERSION_FILE) $(zlib_VERSION_FILE) $(hdf5_FILE)
 	( printf '/HDF5_PRINTF_LL/s/(.*)/(HDF5_PRINTF_LL)/\nw\nq' | ed -s config/cmake/ConfigureChecks.cmake ) && \
 	mkdir build && cd build && \
 	mkdir -p $(ABSOLUTE_PREFIX_ROOT) && \
+	export PATH=$(ABSOLUTE_PREFIX_ROOT)/jom/bin:$$PATH && \
 	$(CMAKE) \
 		$(COMMON_CMAKE_FLAGS) \
 		-DBUILD_SHARED_LIBS:BOOL=OFF \
@@ -401,7 +406,7 @@ $(jom_VERSION_FILE) : $(cmake_VERSION_FILE) $(qt5base_VERSION_FILE) $(jom_FILE)/
 	echo $(jom_VERSION) > $@
 
 # jpeg
-$(jpeg_VERSION_FILE) : $(cmake_VERSION_FILE) $(jpeg_FILE)/HEAD
+$(jpeg_VERSION_FILE) : $(cmake_VERSION_FILE) $(jom_VERSION_FILE) $(jpeg_FILE)/HEAD
 	@echo Building jpeg $(jpeg_VERSION) && \
 	mkdir -p $(ABSOLUTE_BUILD_ROOT) && cd $(ABSOLUTE_BUILD_ROOT) && \
 	rm -rf jpeg && \
@@ -409,9 +414,9 @@ $(jpeg_VERSION_FILE) : $(cmake_VERSION_FILE) $(jpeg_FILE)/HEAD
 	cd jpeg && \
 	git checkout -q $(jpeg_VERSION) && \
 	mkdir -p $(ABSOLUTE_PREFIX_ROOT) && \
+	export PATH=$(ABSOLUTE_PREFIX_ROOT)/jom/bin:$$PATH && \
 	$(CMAKE) \
 		$(COMMON_CMAKE_FLAGS) \
-		-G "NMake Makefiles" \
 		-DENABLE_SHARED:BOOL=OFF \
 		-DENABLE_STATIC:BOOL=ON \
 		-DCMAKE_INSTALL_PREFIX="$(WINDOWS_PREFIX_ROOT)/jpeg" \
@@ -427,7 +432,7 @@ $(jpeg_VERSION_FILE) : $(cmake_VERSION_FILE) $(jpeg_FILE)/HEAD
 
 
 # jsoncpp
-$(jsoncpp_VERSION_FILE) : $(cmake_VERSION_FILE) $(zlib_VERSION_FILE) $(jsoncpp_FILE)/HEAD
+$(jsoncpp_VERSION_FILE) : $(cmake_VERSION_FILE) $(jom_VERSION_FILE) $(zlib_VERSION_FILE) $(jsoncpp_FILE)/HEAD
 	@echo Building jsoncpp $(jsoncpp_VERSION) && \
 	mkdir -p $(ABSOLUTE_BUILD_ROOT) && cd $(ABSOLUTE_BUILD_ROOT) && \
 	rm -rf jsoncpp && \
@@ -435,6 +440,7 @@ $(jsoncpp_VERSION_FILE) : $(cmake_VERSION_FILE) $(zlib_VERSION_FILE) $(jsoncpp_F
 	cd jsoncpp && \
 	git checkout -q $(jsoncpp_VERSION) && \
 	mkdir -p $(ABSOLUTE_PREFIX_ROOT) && \
+	export PATH=$(ABSOLUTE_PREFIX_ROOT)/jom/bin:$$PATH && \
 	$(CMAKE) \
 		$(COMMON_CMAKE_FLAGS) \
 		-DCMAKE_INSTALL_PREFIX="$(WINDOWS_PREFIX_ROOT)/jsoncpp" \
@@ -449,13 +455,14 @@ $(jsoncpp_VERSION_FILE) : $(cmake_VERSION_FILE) $(zlib_VERSION_FILE) $(jsoncpp_F
 	cd $(THIS_DIR) && \
 	echo $(jsoncpp_VERSION) > $@
 
-$(ilmbase_VERSION_FILE) : $(cmake_VERSION_FILE) $(ilmbase_FILE)
+$(ilmbase_VERSION_FILE) : $(cmake_VERSION_FILE) $(jom_VERSION_FILE) $(ilmbase_FILE)
 	@echo Building IlmBase $(ilmbase_VERSION) && \
 	mkdir -p $(ABSOLUTE_BUILD_ROOT) && cd $(ABSOLUTE_BUILD_ROOT) && \
 	rm -rf ilmbase-$(ilmbase_VERSION) && \
 	tar -xf $(ABSOLUTE_SOURCES_ROOT)/ilmbase-$(ilmbase_VERSION).tar.gz && \
 	cd ilmbase-$(ilmbase_VERSION) && \
 	mkdir -p $(ABSOLUTE_PREFIX_ROOT) && \
+	export PATH=$(ABSOLUTE_PREFIX_ROOT)/jom/bin:$$PATH && \
 	$(CMAKE) \
 		$(COMMON_CMAKE_FLAGS) \
 		-DBUILD_SHARED_LIBS:BOOL=OFF \
@@ -477,7 +484,7 @@ $(ilmbase_VERSION_FILE) : $(cmake_VERSION_FILE) $(ilmbase_FILE)
 # - Defining OIIO_STATIC_BUILD to avoid specifying it everywhere
 # - std::locale segfault fix
 # - Python module
-$(oiio_VERSION_FILE) : $(boost_VERSION_FILE) $(cmake_VERSION_FILE) $(freetype_VERSION_FILE) $(ilmbase_VERSION_FILE) $(jpeg_VERSION_FILE) $(openexr_VERSION_FILE) $(png_VERSION_FILE) $(tiff_VERSION_FILE) $(zlib_VERSION_FILE) $(oiio_FILE)/HEAD
+$(oiio_VERSION_FILE) : $(boost_VERSION_FILE) $(cmake_VERSION_FILE) $(jom_VERSION_FILE) $(freetype_VERSION_FILE) $(ilmbase_VERSION_FILE) $(jpeg_VERSION_FILE) $(openexr_VERSION_FILE) $(png_VERSION_FILE) $(tiff_VERSION_FILE) $(zlib_VERSION_FILE) $(oiio_FILE)/HEAD
 	@echo Building OpenImageIO $(oiio_VERSION) && \
 	mkdir -p $(ABSOLUTE_BUILD_ROOT) && cd $(ABSOLUTE_BUILD_ROOT) && \
 	rm -rf oiio && \
@@ -492,6 +499,7 @@ $(oiio_VERSION_FILE) : $(boost_VERSION_FILE) $(cmake_VERSION_FILE) $(freetype_VE
 	( printf '/Boost_USE_STATIC_LIBS/d\nw\nq' | ed -s src/cmake/externalpackages.cmake ) && \
 	mkdir build && cd build && \
 	mkdir -p $(ABSOLUTE_PREFIX_ROOT) && \
+	export PATH=$(ABSOLUTE_PREFIX_ROOT)/jom/bin:$$PATH && \
 	$(CMAKE) \
 		$(COMMON_CMAKE_FLAGS) \
 		-DBOOST_ROOT="$(WINDOWS_PREFIX_ROOT)/boost" \
@@ -526,13 +534,14 @@ $(oiio_VERSION_FILE) : $(boost_VERSION_FILE) $(cmake_VERSION_FILE) $(freetype_VE
 	echo $(oiio_VERSION) > $@
 
 
-$(openexr_VERSION_FILE) : $(cmake_VERSION_FILE) $(ilmbase_VERSION_FILE) $(zlib_VERSION_FILE) $(openexr_FILE)
+$(openexr_VERSION_FILE) : $(cmake_VERSION_FILE) $(jom_VERSION_FILE) $(ilmbase_VERSION_FILE) $(zlib_VERSION_FILE) $(openexr_FILE)
 	@echo Building OpenEXR $(openexr_VERSION) && \
 	mkdir -p $(ABSOLUTE_BUILD_ROOT) && cd $(ABSOLUTE_BUILD_ROOT) && \
 	rm -rf openexr-$(openexr_VERSION) && \
 	tar -xf $(ABSOLUTE_SOURCES_ROOT)/openexr-$(openexr_VERSION).tar.gz && \
 	cd openexr-$(openexr_VERSION) && \
 	mkdir -p $(ABSOLUTE_PREFIX_ROOT) && \
+	export PATH=$(ABSOLUTE_PREFIX_ROOT)/jom/bin:$$PATH && \
 	$(CMAKE) \
 		$(COMMON_CMAKE_FLAGS) \
 		-DBUILD_SHARED_LIBS:BOOL=OFF \
@@ -553,7 +562,7 @@ $(openexr_VERSION_FILE) : $(cmake_VERSION_FILE) $(ilmbase_VERSION_FILE) $(zlib_V
 
 
 # OpenSubdiv
-$(opensubd_VERSION_FILE) : $(cmake_VERSION_FILE) $(glew_VERSION_FILE) $(glfw_VERSION_FILE) $(ptex_VERSION_FILE) $(tbb_VERSION_FILE) $(zlib_VERSION_FILE) $(opensubd_FILE)/HEAD
+$(opensubd_VERSION_FILE) : $(cmake_VERSION_FILE) $(jom_VERSION_FILE) $(glew_VERSION_FILE) $(glfw_VERSION_FILE) $(ptex_VERSION_FILE) $(tbb_VERSION_FILE) $(zlib_VERSION_FILE) $(opensubd_FILE)/HEAD
 	@echo Building OpenSubdiv $(opensubd_VERSION) && \
 	mkdir -p $(ABSOLUTE_BUILD_ROOT) && cd $(ABSOLUTE_BUILD_ROOT) && \
 	rm -rf $(notdir $(basename $(opensubd_FILE))) && \
@@ -566,6 +575,7 @@ $(opensubd_VERSION_FILE) : $(cmake_VERSION_FILE) $(glew_VERSION_FILE) $(glfw_VER
 	( printf "/if.*NOT.*NOT/s/(/( 0 AND /\nw\nq" | ed -s opensubdiv/CMakeLists.txt ) && \
 	( printf "/\/WX/d\nw\nq" | ed -s CMakeLists.txt ) && \
 	( printf "/glew32s/s/glew32s/libglew32/\nw\nq" | ed -s cmake/FindGLEW.cmake ) && \
+	export PATH=$(ABSOLUTE_PREFIX_ROOT)/jom/bin:$$PATH && \
 	$(CMAKE) \
 		$(COMMON_CMAKE_FLAGS) \
 		-DCMAKE_INSTALL_PREFIX="$(WINDOWS_PREFIX_ROOT)/opensubdiv" \
@@ -614,7 +624,7 @@ $(perl_VERSION_FILE) : $(perl_FILE)
 	echo $(perl_VERSION) > $@
 
 # png
-$(png_VERSION_FILE) : $(cmake_VERSION_FILE) $(zlib_VERSION_FILE) $(png_FILE)/HEAD
+$(png_VERSION_FILE) : $(cmake_VERSION_FILE) $(jom_VERSION_FILE) $(zlib_VERSION_FILE) $(png_FILE)/HEAD
 	@echo Building png $(png_VERSION) && \
 	mkdir -p $(ABSOLUTE_BUILD_ROOT) && cd $(ABSOLUTE_BUILD_ROOT) && \
 	rm -rf png && \
@@ -622,6 +632,7 @@ $(png_VERSION_FILE) : $(cmake_VERSION_FILE) $(zlib_VERSION_FILE) $(png_FILE)/HEA
 	cd png && \
 	git checkout -q $(png_VERSION) && \
 	mkdir -p $(ABSOLUTE_PREFIX_ROOT) && \
+	export PATH=$(ABSOLUTE_PREFIX_ROOT)/jom/bin:$$PATH && \
 	$(CMAKE) \
 		$(COMMON_CMAKE_FLAGS) \
 		-DPNG_SHARED:BOOL=OFF \
@@ -639,7 +650,7 @@ $(png_VERSION_FILE) : $(cmake_VERSION_FILE) $(zlib_VERSION_FILE) $(png_FILE)/HEA
 
 
 # Ptex
-$(ptex_VERSION_FILE) : $(cmake_VERSION_FILE) $(ptex_FILE)/HEAD
+$(ptex_VERSION_FILE) : $(cmake_VERSION_FILE) $(jom_VERSION_FILE) $(ptex_FILE)/HEAD
 	@echo Building Ptex $(ptex_VERSION) && \
 	mkdir -p $(ABSOLUTE_BUILD_ROOT) && cd $(ABSOLUTE_BUILD_ROOT) && \
 	rm -rf $(notdir $(basename $(ptex_FILE))) && \
@@ -648,6 +659,7 @@ $(ptex_VERSION_FILE) : $(cmake_VERSION_FILE) $(ptex_FILE)/HEAD
 	git checkout -q $(ptex_VERSION) && \
 	mkdir -p $(ABSOLUTE_PREFIX_ROOT) && \
 	( printf "2a\n#define PTEX_STATIC\n.\nw\nq\n" | ed -s src/ptex/Ptexture.h ) && \
+	export PATH=$(ABSOLUTE_PREFIX_ROOT)/jom/bin:$$PATH && \
 	$(CMAKE) \
 		$(COMMON_CMAKE_FLAGS) \
 		-DCMAKE_INSTALL_PREFIX="$(WINDOWS_PREFIX_ROOT)/ptex" \
@@ -789,7 +801,7 @@ TBB_LIBRARY := "$(WINDOWS_PREFIX_ROOT)/tbb/lib"
 TBB_ROOT_DIR := "$(WINDOWS_PREFIX_ROOT)/tbb/include"
 MAYA_ROOT := "C:/Program Files/Autodesk/Maya2016"
 
-$(usd_VERSION_FILE) : $(boost_VERSION_FILE) $(cmake_VERSION_FILE) $(glut_VERSION_FILE) $(ilmbase_VERSION_FILE) $(oiio_VERSION_FILE) $(openexr_VERSION_FILE) $(opensubd_VERSION_FILE) $(ptex_VERSION_FILE) $(tbb_VERSION_FILE) $(usd_FILE)/HEAD
+$(usd_VERSION_FILE) : $(boost_VERSION_FILE) $(cmake_VERSION_FILE) $(jom_VERSION_FILE) $(glut_VERSION_FILE) $(ilmbase_VERSION_FILE) $(oiio_VERSION_FILE) $(openexr_VERSION_FILE) $(opensubd_VERSION_FILE) $(ptex_VERSION_FILE) $(tbb_VERSION_FILE) $(usd_FILE)/HEAD
 	@echo Building usd $(usd_VERSION) && \
 	mkdir -p $(ABSOLUTE_BUILD_ROOT) && cd $(ABSOLUTE_BUILD_ROOT) && \
 	rm -rf $(notdir $(basename $(usd_FILE))) && \

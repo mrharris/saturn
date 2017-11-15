@@ -59,17 +59,20 @@ $(eval $(call CURL_DOWNLOAD,glut,3.0.0,https://sourceforge.net/projects/freeglut
 $(eval $(call CURL_DOWNLOAD,hdf5,1.8.10,https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-$$(word 1,$$(subst ., ,$$(hdf5_VERSION))).$$(word 2,$$(subst ., ,$$(hdf5_VERSION)))/hdf5-$$(hdf5_VERSION)/src/hdf5-$$(hdf5_VERSION).tar.gz))
 $(eval $(call CURL_DOWNLOAD,ilmbase,2.2.0,http://download.savannah.nongnu.org/releases/openexr/ilmbase-$$(ilmbase_VERSION).tar.gz))
 $(eval $(call CURL_DOWNLOAD,openexr,2.2.0,http://download.savannah.nongnu.org/releases/openexr/openexr-$$(openexr_VERSION).tar.gz))
+$(eval $(call CURL_DOWNLOAD,perl,5.26.1,http://www.cpan.org/src/5.0/perl-$$(perl_VERSION).tar.gz))
 $(eval $(call CURL_DOWNLOAD,tbb,2017_20161128oss,https://www.threadingbuildingblocks.org/sites/default/files/software_releases/source/tbb$$(tbb_VERSION)_src.tgz))
 $(eval $(call CURL_DOWNLOAD,tiff,3.8.2,http://dl.maptools.org/dl/libtiff/tiff-$$(tiff_VERSION).tar.gz))
 $(eval $(call GIT_DOWNLOAD,alembic,1.7.1,git://github.com/alembic/alembic.git))
 $(eval $(call GIT_DOWNLOAD,embree,v2.17.0,git://github.com/embree/embree.git))
 $(eval $(call GIT_DOWNLOAD,glfw,3.2.1,git://github.com/glfw/glfw.git))
+$(eval $(call GIT_DOWNLOAD,jom,v1.1.2,git://github.com/qt-labs/jom.git))
 $(eval $(call GIT_DOWNLOAD,jpeg,1.5.1,git://github.com/libjpeg-turbo/libjpeg-turbo.git))
 $(eval $(call GIT_DOWNLOAD,jsoncpp,1.8.0,git://github.com/open-source-parsers/jsoncpp.git))
 $(eval $(call GIT_DOWNLOAD,oiio,Release-1.8.5,git://github.com/OpenImageIO/oiio.git))
 $(eval $(call GIT_DOWNLOAD,opensubd,v3_2_0,git://github.com/PixarAnimationStudios/OpenSubdiv.git))
 $(eval $(call GIT_DOWNLOAD,png,2b667e4,git://git.code.sf.net/p/libpng/code))
 $(eval $(call GIT_DOWNLOAD,ptex,v2.1.28,git://github.com/wdas/ptex.git))
+$(eval $(call GIT_DOWNLOAD,qt5base,v5.9.2,git://github.com/qt/qtbase.git))
 $(eval $(call GIT_DOWNLOAD,usd,v0.8.1,git://github.com/PixarAnimationStudios/USD))
 $(eval $(call GIT_DOWNLOAD,zlib,v1.2.8,git://github.com/madler/zlib.git))
 
@@ -370,6 +373,31 @@ $(hdf5_VERSION_FILE) : $(cmake_VERSION_FILE) $(zlib_VERSION_FILE) $(hdf5_FILE)
 	cd $(THIS_DIR) && \
 	echo $(hdf5_VERSION) > $@
 
+# jom
+$(jom_VERSION_FILE) : $(cmake_VERSION_FILE) $(qt5base_VERSION_FILE) $(jom_FILE)/HEAD
+	@echo Building jom $(jom_VERSION) && \
+	mkdir -p $(ABSOLUTE_BUILD_ROOT) && cd $(ABSOLUTE_BUILD_ROOT) && \
+	rm -rf $(notdir $(basename $(jom_FILE))) && \
+	git clone -q --no-checkout "$(WINDOWS_SOURCES_ROOT)/$(notdir $(jom_FILE))" $(notdir $(basename $(jom_FILE))) && \
+	cd $(notdir $(basename $(jom_FILE))) && \
+	git checkout -q $(jom_VERSION) && \
+	( printf "/target_link_libraries/s/)/ Winmm Mincore $(subst /,\/,$(WINDOWS_PREFIX_ROOT))\/qtbase\/lib\/qtpcre2.lib)/\nw\n" | ed -s CMakeLists.txt ) && \
+	mkdir -p $(ABSOLUTE_PREFIX_ROOT) && \
+	$(CMAKE) \
+		$(COMMON_CMAKE_FLAGS) \
+		-G "NMake Makefiles" \
+		-DQt5Core_DIR:PATH="$(WINDOWS_PREFIX_ROOT)/qtbase/lib/cmake/Qt5Core" \
+		-DCMAKE_INSTALL_PREFIX="$(WINDOWS_PREFIX_ROOT)/jom" \
+		. > $(ABSOLUTE_PREFIX_ROOT)/log_jom.txt 2>&1 && \
+	$(CMAKE) \
+		--build . \
+		--target install \
+		--config $(CMAKE_BUILD_TYPE) >> $(ABSOLUTE_PREFIX_ROOT)/log_jom.txt 2>&1 && \
+	cd .. && \
+	rm -rf $(notdir $(basename $(jom_FILE))) && \
+	cd $(THIS_DIR) && \
+	echo $(jom_VERSION) > $@
+
 # jpeg
 $(jpeg_VERSION_FILE) : $(cmake_VERSION_FILE) $(jpeg_FILE)/HEAD
 	@echo Building jpeg $(jpeg_VERSION) && \
@@ -560,6 +588,28 @@ $(opensubd_VERSION_FILE) : $(cmake_VERSION_FILE) $(glew_VERSION_FILE) $(glfw_VER
 	cd $(THIS_DIR) && \
 	echo $(opensubd_VERSION) > $@
 
+# perl
+$(perl_VERSION_FILE) : $(perl_FILE)
+	@echo Building Perl $(perl_VERSION) && \
+	mkdir -p $(ABSOLUTE_BUILD_ROOT) && cd $(ABSOLUTE_BUILD_ROOT) && \
+	rm -rf $(notdir $(basename $(perl_FILE))) && \
+	tar -xf $(ABSOLUTE_SOURCES_ROOT)/perl-$(perl_VERSION).tar.gz && \
+	cd perl-$(perl_VERSION)/win32 && \
+	mkdir -p $(ABSOLUTE_PREFIX_ROOT) && \
+	env -u MAKE -u MAKEFLAGS nmake \
+		CCTYPE=MSVC141 \
+		config.h > $(ABSOLUTE_PREFIX_ROOT)/log_perl.txt 2>&1 && \
+	env -u MAKE -u MAKEFLAGS nmake \
+		CCTYPE=MSVC141 \
+		../perlio.i >> $(ABSOLUTE_PREFIX_ROOT)/log_perl.txt 2>&1 && \
+	env -u MAKE -u MAKEFLAGS nmake \
+		CCTYPE=MSVC141 \
+		INST_TOP="$(subst /,\,$(WINDOWS_PREFIX_ROOT))\perl" \
+		install >> $(ABSOLUTE_PREFIX_ROOT)/log_perl.txt 2>&1 && \
+	cd ../.. && \
+	rm -rf $(notdir $(basename $(perl_FILE))) && \
+	cd $(THIS_DIR) && \
+	echo $(perl_VERSION) > $@
 
 # png
 $(png_VERSION_FILE) : $(cmake_VERSION_FILE) $(zlib_VERSION_FILE) $(png_FILE)/HEAD
@@ -611,6 +661,43 @@ $(ptex_VERSION_FILE) : $(cmake_VERSION_FILE) $(ptex_FILE)/HEAD
 	cd $(THIS_DIR) && \
 	echo $(ptex_VERSION) > $@
 
+$(qt5base_VERSION_FILE) : $(perl_VERSION_FILE) $(qt5base_FILE)/HEAD
+	@echo Building Qt5 Base $(qt5base_VERSION) && \
+	mkdir -p $(ABSOLUTE_BUILD_ROOT) && cd $(ABSOLUTE_BUILD_ROOT) && \
+	rm -rf $(notdir $(basename $(qt5base_FILE))) && \
+	git clone -q --no-checkout "$(WINDOWS_SOURCES_ROOT)/$(notdir $(qt5base_FILE))" $(notdir $(basename $(qt5base_FILE))) && \
+	cd $(notdir $(basename $(qt5base_FILE))) && \
+	git checkout -q $(qt5base_VERSION) && \
+	( printf "g/-MD/s/-MD/-MT/g\nw\n" | ed -s mkspecs/common/msvc-desktop.conf ) && \
+	( printf '/^QMAKE_CFLAGS_RELEASE[[:space:]]/a\n -D_SECURE_SCL=0\n.\n-,.j\nw\n' | ed -s mkspecs/common/msvc-desktop.conf ) && \
+	export PATH=$(ABSOLUTE_PREFIX_ROOT)/perl/bin:$$PATH && \
+	env -u MAKE -u MAKEFLAGS cmd /C configure.bat \
+		-prefix "$(WINDOWS_PREFIX_ROOT)/qtbase" \
+		-nomake examples \
+		-nomake tools \
+		-opensource \
+		-confirm-license \
+		-release \
+		-static \
+		-no-sql-mysql \
+		-no-sql-sqlite \
+		-no-qml-debug \
+		-no-gif \
+		-qt-libpng \
+		-no-libjpeg \
+		-qt-freetype \
+		-no-openssl \
+		-qt-pcre \
+		-no-cups \
+		-opengl desktop \
+		-no-directwrite \
+		-mp > $(ABSOLUTE_PREFIX_ROOT)/log_gt5base.txt 2>&1 && \
+	env -u MAKE -u MAKEFLAGS nmake >> $(ABSOLUTE_PREFIX_ROOT)/log_gt5base.txt 2>&1 && \
+	env -u MAKE -u MAKEFLAGS nmake install >> $(ABSOLUTE_PREFIX_ROOT)/log_gt5base.txt 2>&1 && \
+	cd .. && \
+	rm -rf $(notdir $(basename $(qt5base_FILE))) && \
+	cd $(THIS_DIR) && \
+	echo $(qt5base_VERSION) > $@
 
 # tbb
 $(tbb_VERSION_FILE) : $(tbb_FILE)
@@ -697,7 +784,7 @@ TBB_LIBRARY := "$(WINDOWS_PREFIX_ROOT)/tbb/lib"
 TBB_ROOT_DIR := "$(WINDOWS_PREFIX_ROOT)/tbb/include"
 MAYA_ROOT := "C:/Program Files/Autodesk/Maya2016"
 
-$(usd_VERSION_FILE) : $(boost_VERSION_FILE) $(cmake_VERSION_FILE) $(glut_VERSION_FILE) $(ilmbase_VERSION_FILE) $(oiio_VERSION_FILE) $(openexr_VERSION_FILE) $(opensubd_VERSION_FILE) $(ptex_VERSION_FILE) $(tbb_VERSION_FILE) $(usd_FILE)/HEAD
+$(usd_VERSION_FILE) : $(boost_VERSION_FILE) $(cmake_VERSION_FILE) $(glut_VERSION_FILE) $(ilmbase_VERSION_FILE) $(jom_VERSION_FILE) $(oiio_VERSION_FILE) $(openexr_VERSION_FILE) $(opensubd_VERSION_FILE) $(ptex_VERSION_FILE) $(tbb_VERSION_FILE) $(usd_FILE)/HEAD
 	@echo Building usd $(usd_VERSION) && \
 	mkdir -p $(ABSOLUTE_BUILD_ROOT) && cd $(ABSOLUTE_BUILD_ROOT) && \
 	rm -rf $(notdir $(basename $(usd_FILE))) && \
@@ -727,9 +814,10 @@ $(usd_VERSION_FILE) : $(boost_VERSION_FILE) $(cmake_VERSION_FILE) $(glut_VERSION
 	( printf "/add_subdirectory(extras)/d\nw\n" | ed -s CMakeLists.txt ) && \
 	mkdir -p build && cd build && \
 	mkdir -p $(ABSOLUTE_PREFIX_ROOT) && \
+	export PATH=$(ABSOLUTE_PREFIX_ROOT)/jom/bin:$$PATH && \
 	$(CMAKE) \
 		$(COMMON_CMAKE_FLAGS) \
-		-G "Visual Studio 15 2017 Win64" \
+		-G "NMake Makefiles JOM" \
 		-DALEMBIC_DIR=$(WINDOWS_PREFIX_ROOT)/alembic \
 		-DBOOST_ROOT:PATH="$(WINDOWS_PREFIX_ROOT)/boost" \
 		-DBUILD_SHARED_LIBS:BOOL=OFF \

@@ -333,11 +333,11 @@ $(glut_VERSION_FILE) : $(cmake_VERSION_FILE) $(glut_FILE)
 		-DFREEGLUT_BUILD_DEMOS:BOOL=OFF \
 		-DFREEGLUT_BUILD_SHARED_LIBS:BOOL=OFF \
 		-DINSTALL_PDB:BOOL=ON \
-		. > $(ABSOLUTE_PREFIX_ROOT)/log_glut.txt 2>&1 && \
+		. && \
 	$(CMAKE) \
 		--build . \
 		--target install \
-		--config $(CMAKE_BUILD_TYPE) >> $(ABSOLUTE_PREFIX_ROOT)/log_glut.txt 2>&1 && \
+		--config $(CMAKE_BUILD_TYPE) && \
 	cd .. && \
 	rm -rf $(notdir $(basename $(basename $(glut_FILE)))) && \
 	cd $(THIS_DIR) && \

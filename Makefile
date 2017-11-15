@@ -36,6 +36,11 @@ $$($(1)_FILE)/HEAD :
 	@mkdir -p $(ABSOLUTE_SOURCES_ROOT) && \
 	echo Downloading $$($(1)_FILE)... && \
 	git clone -q --bare $$($(1)_SOURCE) `cygpath -w $$($(1)_FILE)`
+
+$(1)-archive: $(1)-$$($(1)_VERSION).tar.xz
+$(1)-$$($(1)_VERSION).tar.xz: $$($(1)_VERSION_FILE)
+	@echo Archiving $$@ && \
+	tar cfJ $$@ -C $(ABSOLUTE_PREFIX_ROOT) $(1)
 endef
 
 define CURL_DOWNLOAD =
@@ -49,6 +54,11 @@ $$($(1)_FILE) :
 	@mkdir -p $(ABSOLUTE_SOURCES_ROOT) && \
 	echo Downloading $$($(1)_FILE)... && \
 	curl --tlsv1.2 -s -o $$@ -L $$($(1)_SOURCE)
+
+$(1)-archive: $(1)-$$($(1)_VERSION).tar.xz
+$(1)-$$($(1)_VERSION).tar.xz: $$($(1)_VERSION_FILE)
+	@echo Archiving $$@ && \
+	tar cfJ $$@ -C $(ABSOLUTE_PREFIX_ROOT) $(1)
 endef
 
 $(eval $(call CURL_DOWNLOAD,boost,1_61_0,http://sourceforge.net/projects/boost/files/boost/$$(subst _,.,$$(boost_VERSION))/boost_$$(boost_VERSION).tar.gz))

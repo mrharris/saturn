@@ -381,12 +381,12 @@ $(jom_VERSION_FILE) : $(cmake_VERSION_FILE) $(qt5base_VERSION_FILE) $(jom_FILE)/
 	git clone -q --no-checkout "$(WINDOWS_SOURCES_ROOT)/$(notdir $(jom_FILE))" $(notdir $(basename $(jom_FILE))) && \
 	cd $(notdir $(basename $(jom_FILE))) && \
 	git checkout -q $(jom_VERSION) && \
-	( printf "/target_link_libraries/s/)/ Winmm Mincore $(subst /,\/,$(WINDOWS_PREFIX_ROOT))\/qtbase\/lib\/qtpcre2.lib)/\nw\n" | ed -s CMakeLists.txt ) && \
+	( printf "/target_link_libraries/s/)/ Winmm Mincore $(subst /,\/,$(WINDOWS_PREFIX_ROOT))\/qt5base\/lib\/qtpcre2.lib)/\nw\n" | ed -s CMakeLists.txt ) && \
 	mkdir -p $(ABSOLUTE_PREFIX_ROOT) && \
 	$(CMAKE) \
 		$(COMMON_CMAKE_FLAGS) \
 		-G "NMake Makefiles" \
-		-DQt5Core_DIR:PATH="$(WINDOWS_PREFIX_ROOT)/qtbase/lib/cmake/Qt5Core" \
+		-DQt5Core_DIR:PATH="$(WINDOWS_PREFIX_ROOT)/qt5base/lib/cmake/Qt5Core" \
 		-DCMAKE_INSTALL_PREFIX="$(WINDOWS_PREFIX_ROOT)/jom" \
 		. > $(ABSOLUTE_PREFIX_ROOT)/log_jom.txt 2>&1 && \
 	$(CMAKE) \
@@ -672,30 +672,33 @@ $(qt5base_VERSION_FILE) : $(perl_VERSION_FILE) $(qt5base_FILE)/HEAD
 	( printf '/^QMAKE_CFLAGS_RELEASE[[:space:]]/a\n -D_SECURE_SCL=0\n.\n-,.j\nw\n' | ed -s mkspecs/common/msvc-desktop.conf ) && \
 	export PATH=$(ABSOLUTE_PREFIX_ROOT)/perl/bin:$$PATH && \
 	env -u MAKE -u MAKEFLAGS cmd /C configure.bat \
-		-prefix "$(WINDOWS_PREFIX_ROOT)/qtbase" \
-		-nomake examples \
-		-nomake tools \
-		-opensource \
 		-confirm-license \
-		-release \
-		-static \
+		-no-cups \
+		-no-directwrite \
+		-no-gif \
+		-no-gui \
+		-no-libjpeg \
+		-no-openssl \
+		-no-qml-debug \
 		-no-sql-mysql \
 		-no-sql-sqlite \
-		-no-qml-debug \
-		-no-gif \
-		-qt-libpng \
-		-no-libjpeg \
-		-qt-freetype \
-		-no-openssl \
-		-qt-pcre \
-		-no-cups \
+		-no-widgets \
+		-nomake examples \
+		-nomake tests \
+		-nomake tools \
 		-opengl desktop \
-		-no-directwrite \
+		-opensource \
+		-prefix "$(WINDOWS_PREFIX_ROOT)/qt5base" \
+		-qt-freetype \
+		-qt-libpng \
+		-qt-pcre \
+		-release \
+		-static \
 		-mp > $(ABSOLUTE_PREFIX_ROOT)/log_gt5base.txt 2>&1 && \
 	env -u MAKE -u MAKEFLAGS nmake >> $(ABSOLUTE_PREFIX_ROOT)/log_gt5base.txt 2>&1 && \
 	env -u MAKE -u MAKEFLAGS nmake install >> $(ABSOLUTE_PREFIX_ROOT)/log_gt5base.txt 2>&1 && \
 	cd .. && \
-	rm -rf $(notdir $(basename $(qt5base_FILE))) && \
+	echo rm -rf $(notdir $(basename $(qt5base_FILE))) && \
 	cd $(THIS_DIR) && \
 	echo $(qt5base_VERSION) > $@
 
@@ -850,7 +853,7 @@ $(usd_VERSION_FILE) : $(boost_VERSION_FILE) $(cmake_VERSION_FILE) $(glut_VERSION
 	$(CMAKE) \
 		--build . \
 		--target install \
-		--config $(CMAKE_BUILD_TYPE) && \
+		--config $(CMAKE_BUILD_TYPE) -- -j1 && \
 	( test ! $(USE_STATIC_BOOST) == OFF || echo Including boost shared libraries... ) && \
 	( test ! $(USE_STATIC_BOOST) == OFF || cp $(ABSOLUTE_PREFIX_ROOT)/boost/lib/*.dll $(ABSOLUTE_PREFIX_ROOT)/usd/lib ) && \
 	cd ../.. && \

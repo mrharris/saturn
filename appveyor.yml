@@ -27,7 +27,7 @@ install:
     - cmd: nasm-2.13.01\nasm.exe --version
 
     # jom
-    - cmd: curl https://github.com/VictorYudin/saturn-jom/releases/download/1.0.5/jom-v1.1.2.tar.xz -o jom.tar.xz
+    - cmd: curl --tlsv1.2 -o jom.tar.xz -L https://github.com/VictorYudin/saturn-jom/releases/download/1.0.5/jom-v1.1.2.tar.xz
     - cmd: tar -xf jom.tar.xz
 
     # Put them to PATH

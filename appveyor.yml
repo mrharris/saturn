@@ -38,6 +38,8 @@ install:
 
     # Maya 2016 devkit
     - cmd: git clone git://github.com/autodesk-adn/Maya-devkit.git
+    - cmd: rm -rf Maya-devkit/win/include/tbb
+    - cmd: rm -rf Maya-devkit/win/include/python2.7
     - cmd: mkdir Maya-devkit\win\lib
     - cmd: lib /def:defs/Foundation.def /out:Maya-devkit/win/lib/Foundation.lib /machine:x64
     - cmd: lib /def:defs/OpenMaya.def /out:Maya-devkit/win/lib/OpenMaya.lib /machine:x64

@@ -291,6 +291,7 @@ $(glew_VERSION_FILE) : $(cmake_VERSION_FILE) $(glew_FILE)
 	cd build && \
 	$(CMAKE) \
 		$(COMMON_CMAKE_FLAGS) \
+		-G "NMake Makefiles" \
 		-DCMAKE_INSTALL_PREFIX="$(WINDOWS_PREFIX_ROOT)/glew" \
 		./cmake > $(ABSOLUTE_PREFIX_ROOT)/log_glew.txt 2>&1 && \
 	$(CMAKE) \

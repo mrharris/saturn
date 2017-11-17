@@ -53,7 +53,7 @@ $(1): $$($(1)_VERSION_FILE)
 $$($(1)_FILE) :
 	@mkdir -p $(ABSOLUTE_SOURCES_ROOT) && \
 	echo Downloading $$($(1)_FILE)... && \
-	curl --tlsv1.2 -s -o $$@ -L $$($(1)_SOURCE)
+	curl --tlsv1.2 --retry 10 -s -o $$@ -L $$($(1)_SOURCE)
 
 $(1)-archive: $(1)-$$($(1)_VERSION).tar.xz
 $(1)-$$($(1)_VERSION).tar.xz: $$($(1)_VERSION_FILE)
@@ -528,7 +528,7 @@ $(oiio_VERSION_FILE) : $(boost_VERSION_FILE) $(cmake_VERSION_FILE) $(freetype_VE
 	$(CMAKE) \
 		--build . \
 		--target install \
-		--config $(CMAKE_BUILD_TYPE) -- -j4 >> $(ABSOLUTE_PREFIX_ROOT)/log_oiio.txt 2>&1 && \
+		--config $(CMAKE_BUILD_TYPE) >> $(ABSOLUTE_PREFIX_ROOT)/log_oiio.txt 2>&1 && \
 	cd ../.. && \
 	rm -rf oiio && \
 	cd $(THIS_DIR) && \
@@ -858,11 +858,11 @@ $(usd_VERSION_FILE) : $(boost_VERSION_FILE) $(cmake_VERSION_FILE) $(glut_VERSION
 		-DZLIB_ROOT:PATH="$(WINDOWS_PREFIX_ROOT)/zlib" \
 		-D_GLUT_INC_DIR:PATH="$(WINDOWS_PREFIX_ROOT)/glut/include" \
 		-D_GLUT_glut_LIB_DIR:PATH="$(WINDOWS_PREFIX_ROOT)/glut/lib" \
-		.. && \
+		.. > $(ABSOLUTE_PREFIX_ROOT)/log_usd.txt 2>&1 && \
 	$(CMAKE) \
 		--build . \
 		--target install \
-		--config $(CMAKE_BUILD_TYPE) -- -j4 && \
+		--config $(CMAKE_BUILD_TYPE) >> $(ABSOLUTE_PREFIX_ROOT)/log_usd.txt 2>&1 && \
 	( test ! $(USE_STATIC_BOOST) == OFF || echo Including boost shared libraries... ) && \
 	( test ! $(USE_STATIC_BOOST) == OFF || cp $(ABSOLUTE_PREFIX_ROOT)/boost/lib/*.dll $(ABSOLUTE_PREFIX_ROOT)/usd/lib ) && \
 	cd ../.. && \
